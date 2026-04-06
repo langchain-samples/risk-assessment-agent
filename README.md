@@ -50,7 +50,8 @@ The agent acts as a GRC (Governance, Risk, Compliance) advisor. When you tell it
 ## Prerequisites
 
 - Python 3.11+
-- [LangGraph CLI](https://langchain-ai.github.io/langgraph/cloud/reference/cli/) (`pip install langgraph-cli` or `pipx install langgraph-cli`)
+- [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- [LangGraph CLI](https://langchain-ai.github.io/langgraph/cloud/reference/cli/) (`pipx install langgraph-cli`)
 - API keys (see below)
 
 ## Setup
@@ -59,12 +60,8 @@ The agent acts as a GRC (Governance, Risk, Compliance) advisor. When you tell it
 # Clone / navigate to project
 cd risk-assessment-agent
 
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
 # Install dependencies
-pip install -e .
+uv sync
 
 # Configure environment variables
 cp .env.example .env
@@ -85,7 +82,7 @@ Set `MODEL_PROVIDER=gemini` (default) or `MODEL_PROVIDER=openai` in `.env` to ch
 ### Seed the Database
 
 ```bash
-python seed_db.py
+uv run python seed_db.py
 ```
 
 This creates `risk_governance.db` with synthetic GRC data: 10 regulatory frameworks (including AI Act, AICM, AIEU), 12 policies, 35 controls, 22 risks, 28 mitigations, 18 audit findings, and 48 compliance mappings.
@@ -112,7 +109,7 @@ This starts the LangGraph development server and opens LangGraph Studio in your 
 ### Option 2: Interactive Chat (terminal)
 
 ```bash
-python chat.py
+uv run python chat.py
 ```
 
 Rich-formatted terminal chat with conversation memory. Type `quit` or `exit` to end.
