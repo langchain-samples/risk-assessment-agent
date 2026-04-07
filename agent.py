@@ -10,14 +10,23 @@ Traced to LangSmith. Exports `agent` for LangGraph Studio via langgraph.json.
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from tools import get_all_tools
 
 load_dotenv()
+
+# Fix Vertex AI credentials path to absolute if set as relative
+if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    cred_path = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+    if not os.path.isabs(cred_path):
+        project_root = Path(__file__).resolve().parent
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(project_root / cred_path.lstrip("./"))
 
 SYSTEM_PROMPT = """You are a Risk Assessment & Governance Agent — an expert advisor that helps \
 organizations assess the risks and compliance requirements of AI initiatives they want to build.
@@ -90,11 +99,19 @@ human oversight, accountability, robustness, and fundamental rights protection.
 
 
 def get_model():
-    """Get the configured LLM based on MODEL_PROVIDER env var."""
+    """Get the configured LLM based on MODEL_PROVIDER env var.
+
+    Supported providers:
+        - "gemini"   (default) — Google Gemini via API key (GOOGLE_API_KEY)
+        - "openai"   — OpenAI GPT-4o (OPENAI_API_KEY)
+        - "vertex"   — Google Vertex AI (GOOGLE_APPLICATION_CREDENTIALS)
+    """
     provider = os.getenv("MODEL_PROVIDER", "gemini").lower()
 
     if provider == "openai":
         return ChatOpenAI(model="gpt-4o", temperature=0)
+    elif provider == "vertex":
+        return init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
     else:
         return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
