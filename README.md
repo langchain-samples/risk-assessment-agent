@@ -266,7 +266,7 @@ Each example includes expected outputs: risk classification, expected tool calls
 uv run python offline_evals.py
 ```
 
-This runs 4 experiments — one per model — against the dataset:
+This runs 4 experiments — one per model — against the dataset. By default it uses:
 
 | Model | Provider |
 |-------|----------|
@@ -275,7 +275,36 @@ This runs 4 experiments — one per model — against the dataset:
 | `claude-sonnet-4-20250514` | Anthropic |
 | `gemini-2.5-flash` | Google |
 
-Each experiment runs all 8 dataset examples through the agent and scores them with 4 evaluators:
+#### Customizing models
+
+Both the agent models and the LLM judge model are configurable in `offline_evals.py`. You can use any model supported by LangChain's [`init_chat_model`](https://python.langchain.com/docs/how_to/chat_models_universal_init/).
+
+**Agent models** — edit the `MODEL_CONFIGS` list to add, remove, or swap models. Each entry runs a separate experiment:
+
+```python
+# offline_evals.py
+MODEL_CONFIGS = [
+    {"model": "google_genai:gemini-2.5-flash", "temperature": 0, "label": "gemini-2.5-flash"},
+    {"model": "google_genai:gemini-2.5-pro", "temperature": 0, "label": "gemini-2.5-pro"},
+    # {"model": "openai:gpt-4.1", "temperature": 0, "label": "gpt-4.1"},  # commented out = skipped
+]
+```
+
+**LLM judge model** — the two LLM judge evaluators (`subagent_delegation_quality`, `risk_classification_accuracy`) use a separate model to grade outputs. Change it by editing the `delegation_judge` and `classification_judge` lines:
+
+```python
+# offline_evals.py — change the judge model
+delegation_judge = ChatOpenAI(model="gpt-4.1", temperature=0).with_structured_output(...)
+# or use any LangChain chat model, e.g.:
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# delegation_judge = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0).with_structured_output(...)
+```
+
+The model string format is `provider:model_name` — for example `openai:gpt-4.1-mini`, `anthropic:claude-sonnet-4-20250514`, `google_genai:gemini-2.5-flash`. You only need the API key for the providers you're actually using.
+
+#### Evaluators
+
+Each experiment scores all 8 dataset examples with 4 evaluators:
 
 | Evaluator | Type | What It Measures |
 |-----------|------|-----------------|
@@ -285,8 +314,6 @@ Each experiment runs all 8 dataset examples through the agent and scores them wi
 | `assessment_structure_completeness` | Custom Code | Does the response include all required sections? |
 
 Results are visible in the LangSmith **Experiments** tab with model, prompt, and tool metadata populated for comparison.
-
-> **Note**: Running all 4 experiments requires API keys for OpenAI (`OPENAI_API_KEY`), Anthropic (`ANTHROPIC_API_KEY`), and Google (`GOOGLE_API_KEY`). The LLM judge evaluators also use OpenAI (`gpt-4.1`). Comment out entries in `MODEL_CONFIGS` in `offline_evals.py` to skip models you don't have keys for.
 
 ## LangSmith Tracing
 
