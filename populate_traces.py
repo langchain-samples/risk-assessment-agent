@@ -134,10 +134,13 @@ def create_app(agent, thread_id):
         final = result["messages"][-1]
         response_content = final.content if hasattr(final, "content") else str(final)
         if isinstance(response_content, list):
-            response_content = next(
-                (c["text"] for c in response_content if c.get("type") == "text"),
-                str(response_content),
-            )
+            parts = []
+            for c in response_content:
+                if isinstance(c, str):
+                    parts.append(c)
+                elif isinstance(c, dict) and c.get("type") == "text":
+                    parts.append(c["text"])
+            response_content = "\n".join(parts) if parts else str(response_content)
         return {"role": "assistant", "content": response_content}
 
     return app

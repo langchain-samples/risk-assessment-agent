@@ -21,6 +21,19 @@ from langchain_core.tools import tool
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "risk_governance.db")
 
 
+def _extract_text(content):
+    """Extract text from message content that may be a string, list of strings, or list of dicts."""
+    if isinstance(content, list):
+        parts = []
+        for c in content:
+            if isinstance(c, str):
+                parts.append(c)
+            elif isinstance(c, dict) and c.get("type") == "text":
+                parts.append(c["text"])
+        return "\n".join(parts) if parts else str(content)
+    return content if isinstance(content, str) else str(content)
+
+
 def _get_db():
     return SQLDatabase.from_uri(f"sqlite:///{DB_PATH}", sample_rows_in_table_info=3)
 
@@ -157,9 +170,7 @@ def create_subagent_tools(llm):
         )
         final = result["messages"][-1]
         content = final.content if hasattr(final, "content") else str(final)
-        if isinstance(content, list):
-            content = next((c["text"] for c in content if c.get("type") == "text"), str(content))
-        return content
+        return _extract_text(content)
 
     @tool
     def grc_database_analysis(query: str) -> str:
@@ -171,9 +182,7 @@ def create_subagent_tools(llm):
         )
         final = result["messages"][-1]
         content = final.content if hasattr(final, "content") else str(final)
-        if isinstance(content, list):
-            content = next((c["text"] for c in content if c.get("type") == "text"), str(content))
-        return content
+        return _extract_text(content)
 
     @tool
     def risk_assessment(context: str) -> str:
@@ -186,9 +195,7 @@ def create_subagent_tools(llm):
         )
         final = result["messages"][-1]
         content = final.content if hasattr(final, "content") else str(final)
-        if isinstance(content, list):
-            content = next((c["text"] for c in content if c.get("type") == "text"), str(content))
-        return content
+        return _extract_text(content)
 
     return [regulatory_research, grc_database_analysis, risk_assessment]
 

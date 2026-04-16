@@ -14,7 +14,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
+from langchain_core.messages import AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from tools import get_all_tools
@@ -98,6 +100,23 @@ human oversight, accountability, robustness, and fundamental rights protection.
 """
 
 
+class SafeChatVertexAI(ChatVertexAI):
+    """ChatVertexAI subclass that fixes empty-content AI messages.
+
+    Vertex AI rejects messages with empty 'parts', which occurs when
+    tool-call-only messages appear in conversation history.
+    """
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        messages = [
+            msg.model_copy(update={"content": "."})
+            if isinstance(msg, AIMessage) and not msg.content
+            else msg
+            for msg in messages
+        ]
+        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+
 def get_model():
     """Get the configured LLM based on MODEL_PROVIDER env var.
 
@@ -111,7 +130,7 @@ def get_model():
     if provider == "openai":
         return ChatOpenAI(model="gpt-4o", temperature=0)
     elif provider == "vertex":
-        return init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
+        return SafeChatVertexAI(model_name="gemini-2.5-flash", temperature=0)
     else:
         return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
