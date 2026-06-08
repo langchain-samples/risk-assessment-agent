@@ -1,0 +1,4 @@
+We are building an "AI Talent Scout" tool for our corporate HR department. The system will scan submitted PDFs of candidate CVs, parse historical employment data, and automatically score candidates from 1 to 100. Anyone scoring below 75 is automatically filtered out and receives a generic rejection email. We plan to train it on our past 10 years of successful internal hiring data.
+
+
+1 end users are the hr department employees, candidates affected are all 2 yes but not personal data like address, phone number, etc 3 all in the eu 4 reduce time 5 1 month

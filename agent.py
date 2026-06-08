@@ -100,21 +100,40 @@ human oversight, accountability, robustness, and fundamental rights protection.
 """
 
 
-class SafeChatVertexAI(ChatVertexAI):
-    """ChatVertexAI subclass that fixes empty-content AI messages.
-
-    Vertex AI rejects messages with empty 'parts', which occurs when
+class FixEmptyMessagesMixin:
+    """Mixin to fix empty-content AI messages.
+    
+    Google's GenAI APIs reject messages with empty 'parts', which occurs when
     tool-call-only messages appear in conversation history.
     """
-
-    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
-        messages = [
+    def _fix_messages(self, messages):
+        return [
             msg.model_copy(update={"content": "."})
             if isinstance(msg, AIMessage) and not msg.content
             else msg
             for msg in messages
         ]
-        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        return super()._generate(self._fix_messages(messages), stop=stop, run_manager=run_manager, **kwargs)
+
+    async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+        return await super()._agenerate(self._fix_messages(messages), stop=stop, run_manager=run_manager, **kwargs)
+
+    def _stream(self, messages, stop=None, run_manager=None, **kwargs):
+        return super()._stream(self._fix_messages(messages), stop=stop, run_manager=run_manager, **kwargs)
+
+    async def _astream(self, messages, stop=None, run_manager=None, **kwargs):
+        # Return the async generator directly
+        return super()._astream(self._fix_messages(messages), stop=stop, run_manager=run_manager, **kwargs)
+
+
+class SafeChatVertexAI(FixEmptyMessagesMixin, ChatVertexAI):
+    pass
+
+
+class SafeChatGoogleGenerativeAI(FixEmptyMessagesMixin, ChatGoogleGenerativeAI):
+    pass
 
 
 def get_model():
@@ -132,7 +151,7 @@ def get_model():
     elif provider == "vertex":
         return SafeChatVertexAI(model_name="gemini-2.5-flash", temperature=0)
     else:
-        return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+        return SafeChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
 
 def create_risk_agent(checkpointer=None):

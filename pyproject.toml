@@ -27,3 +27,8 @@ py-modules = ["agent", "tools", "chat", "seed_db", "populate_traces", "eval_data
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "langgraph-cli[inmem]>=0.4.27",
+]

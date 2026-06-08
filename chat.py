@@ -58,6 +58,17 @@ def main():
             final_message = result["messages"][-1]
             content = final_message.content if hasattr(final_message, "content") else str(final_message)
 
+            if isinstance(content, list):
+                parts = []
+                for c in content:
+                    if isinstance(c, str):
+                        parts.append(c)
+                    elif isinstance(c, dict) and c.get("type") == "text":
+                        parts.append(c["text"])
+                content = "\n".join(parts) if parts else str(content)
+            elif not isinstance(content, str):
+                content = str(content)
+
             console.print(Panel(
                 Markdown(content),
                 border_style="blue",
