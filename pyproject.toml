@@ -5,7 +5,7 @@ description = "Risk Assessment & Governance Agent using LangChain create_agent w
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "langchain>=1.0,<2.0",
+    "langchain>=1.3.9,<2.0",
     "langchain-core>=1.0,<2.0",
     "langchain-google-genai>=2.1.0",
     "langchain-anthropic>=0.3.0",
